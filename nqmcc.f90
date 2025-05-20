@@ -19,9 +19,10 @@ PROGRAM NQMCC_ALCF_2025
   COMPLEX(dpf), DIMENSION(:),   ALLOCATABLE :: YLM_PROD
 ! ----------------------------------------------------------------------
   CALL MPI_INIT(IERROR)
+  COMM=MPI_COMM_WORLD
+  ROOT=0_spi
   CALL MPI_COMM_RANK(COMM, RANK, IERROR)
   CALL MPI_COMM_SIZE(COMM, SIZE, IERROR)
-  ROOT=0_spi
 !-----------------------------------------------------------------------
   FIRST=0._dpf
   INIT=0._dpf
@@ -87,15 +88,15 @@ PROGRAM NQMCC_ALCF_2025
   IF (RANK.EQ.ROOT) THEN
     LAST = omp_get_wtime()
     PRINT *, "PHI TIME (s)",LAST-INIT
-    !DOT=0._dpf
-    !DO J=1,PARAMS%NT
-    !  DO I=1,PARAMS%NS
-    !    DOT=DOT+PSIJ(I,J)%RE*PSIJ(I,J)%RE+PSIJ(I,J)%IM*PSIJ(I,J)%IM
-    !  END DO
-    !END DO
-    !INIT = omp_get_wtime()
-    !PRINT *, "DOT TIME (s)",LAST-INIT
-    !PRINT *, "DOT: ",DOT
+    DOT=0._dpf
+    DO J=1,PARAMS%NT
+      DO I=1,PARAMS%NS
+        DOT=DOT+PSIJ(I,J)%RE*PSIJ(I,J)%RE+PSIJ(I,J)%IM*PSIJ(I,J)%IM
+      END DO
+    END DO
+    INIT = omp_get_wtime()
+    PRINT *, "DOT TIME (s)",LAST-INIT
+    PRINT *, "DOT: ",DOT
     PRINT *, "TOTAL TIME (s)",LAST-FIRST
   END IF
 ! ----------------------------------------------------------------------
