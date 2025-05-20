@@ -37,7 +37,7 @@ PROGRAM NQMCC_ALCF_2025
   ALLOCATE(PSIJ(PARAMS%NS,PARAMS%NT),SOURCE=CMPLX(0._dpf,0._dpf,KIND=dpf))
   ALLOCATE(YLM_PROD(PARAMS%NYLM),SOURCE=CMPLX(1.12345_dpf,0.6789_dpf,KIND=dpf))
 ! ----------------------------------------------------------------------
-  CALL PHI%INIT_PHI(PARAMS,STATE)
+  CALL PHI%INIT_PHI(PARAMS,STATE,RANK)
   IF (RANK.EQ.ROOT) THEN
     INIT = omp_get_wtime()
     PRINT *, "INIT TIME (s)",INIT-FIRST

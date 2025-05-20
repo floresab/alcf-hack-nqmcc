@@ -99,10 +99,11 @@ MODULE NQMCC_M
 ! ----------------------------------------------------------------------
   END SUBROUTINE ALLOCATE_PHI
 ! ----------------------------------------------------------------------
-  SUBROUTINE  INIT_PHI(SELF,PARAMS,STATE)
+  SUBROUTINE  INIT_PHI(SELF,PARAMS,STATE,RANK)
     CLASS(PHI_T),   INTENT(INOUT) :: SELF
     TYPE(CONTROL_T),INTENT(IN)    :: PARAMS
     REAL(dpf),      INTENT(INOUT) :: STATE
+    INTEGER(spi),   INTENT(IN)    :: RANK
     INTEGER(spi) :: I,J,NX,NY
     INTEGER(dpi) :: II
 ! ----------------------------------------------------------------------
@@ -120,7 +121,7 @@ MODULE NQMCC_M
         II=II+NX
       END DO
     END DO
-    PRINT *, "HOW FULL",REAL(II,kind=dpf)/PARAMS%NPHIM
+    IF (RANK.EQ.0) PRINT *, "HOW FULL",REAL(II,kind=dpf)/PARAMS%NPHIM
 ! ----------------------------------------------------------------------
   END SUBROUTINE INIT_PHI
 ! ----------------------------------------------------------------------
