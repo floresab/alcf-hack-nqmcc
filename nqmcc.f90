@@ -11,7 +11,7 @@ PROGRAM NQMCC_ALCF_2025
   TYPE(MPI_COMM)  :: COMM
   TYPE(CONTROL_T) :: PARAMS
   TYPE(PHI_T)     :: PHI
-  REAL(dpf)       :: STATE,FIRST,INIT,LAST
+  REAL(dpf)       :: STATE,FIRST,INIT,LAST,DOT
   COMPLEX(dpf)    :: CX
   INTEGER(spi)    :: I,J,RANK,SIZE,IERROR,ROOT
   INTEGER(dpi)    :: N,FIRST_IDX,LAST_IDX
@@ -44,7 +44,7 @@ PROGRAM NQMCC_ALCF_2025
     PRINT *, "INIT TIME (s)",INIT-FIRST
   END IF
 ! ----------------------------------------------------------------------
-  !MAX_IJ=IMAX*JMAX
+  !MAX_IJ=PARAMS%NS*PARAMS%NT
   !EXTRA = MOD(MAX_IJ,SIZE)
   !PARTITION=MAX_IJ/SIZE
   !IF (EXTRA.EQ.0) THEN
@@ -59,23 +59,18 @@ PROGRAM NQMCC_ALCF_2025
   !    IEND = (1_spi+RANK)*PARTITION+EXTRA
   !  END IF
   !END IF
-! ----------------------------------------------------------------------
-  !TOTAL_SUM=0._dpf
-  !!$omp target teams distribute parallel do &
-  !!$omp& map(tofrom:TOTAL_SUM) &
-  !!$omp& map(to:K_DATA) &
-  !!$omp& private(k) &
-  !!$omp& shared(IMAX,JMAX,KMAX,K_DATA) &
-  !!$omp& reduction(+:total_sum)
   !DO IDX=ISTART,IEND
   !  I=1_spi+(IDX-1_spi)/JMAX
   !  J=MOD((IDX-1_spi),JMAX)+1_spi
-  !  LOCAL_SUM=0._dpf
-  !  DO K=K_DATA%K_START(I,J),K_DATA%K_END(I,J)
-  !    LOCAL_SUM=LOCAL_SUM+GET_VALUE(K_DATA,I,J,K)
-  !  END DO
-  !  TOTAL_SUM=TOTAL_SUM+LOCAL_SUM
   !END DO
+! ----------------------------------------------------------------------
+! ALL RANKS DO THIS LOOP MANY TIMES : 6*A + 1 * 3 * (A CHOOSE 2)
+! TASK 1: 
+!  SPLIT THIS LOOP UP FOR 1 NODE ON CPU USING MPI
+!   => ONE SIDED COMM
+!   => EACH CORE GETS SOME PARTITION OF I,J SPACE
+! TASK 2: 
+!  OFFLOAD TO GPU
 ! ----------------------------------------------------------------------
   DO J=1,PARAMS%NT
     DO I=1,PARAMS%NS
@@ -92,6 +87,15 @@ PROGRAM NQMCC_ALCF_2025
   IF (RANK.EQ.ROOT) THEN
     LAST = omp_get_wtime()
     PRINT *, "PHI TIME (s)",LAST-INIT
+    !DOT=0._dpf
+    !DO J=1,PARAMS%NT
+    !  DO I=1,PARAMS%NS
+    !    DOT=DOT+PSIJ(I,J)%RE*PSIJ(I,J)%RE+PSIJ(I,J)%IM*PSIJ(I,J)%IM
+    !  END DO
+    !END DO
+    !INIT = omp_get_wtime()
+    !PRINT *, "DOT TIME (s)",LAST-INIT
+    !PRINT *, "DOT: ",DOT
     PRINT *, "TOTAL TIME (s)",LAST-FIRST
   END IF
 ! ----------------------------------------------------------------------
