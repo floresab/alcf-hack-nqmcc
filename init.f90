@@ -28,7 +28,7 @@ END MODULE RNG_M
 ! ----------------------------------------------------------------------
 MODULE NQMCC_M
 ! ----------------------------------------------------------------------
-  use, intrinsic :: iso_fortran_env, only: spi=>int32,dpi=>int64, dpf=>real64
+  use, intrinsic :: iso_fortran_env, only: spi=>int32,dpi=>int64,spf=>real32, dpf=>real64
 ! ----------------------------------------------------------------------
   USE MPI_F08
   USE RNG_M
@@ -48,7 +48,7 @@ MODULE NQMCC_M
 ! ----------------------------------------------------------------------
   TYPE :: PHI_T
     INTEGER(spi),DIMENSION(:),  ALLOCATABLE :: YLM_IDX
-    REAL(dpf),   DIMENSION(:),  ALLOCATABLE :: PHI_DAT
+    REAL(spf),   DIMENSION(:),  ALLOCATABLE :: PHI_DAT
     INTEGER(spi),DIMENSION(:,:),ALLOCATABLE :: NUM_ELEMENTS
     INTEGER(dpi),DIMENSION(:,:),ALLOCATABLE :: START_IDX
     CONTAINS
@@ -98,7 +98,7 @@ MODULE NQMCC_M
     TYPE(CONTROL_T),INTENT(IN)    :: PARAMS
 ! ----------------------------------------------------------------------
     ALLOCATE(SELF%YLM_IDX(PARAMS%NPHIM),SOURCE=0_spi)
-    ALLOCATE(SELF%PHI_DAT(PARAMS%NPHIM),SOURCE=0._dpf)
+    ALLOCATE(SELF%PHI_DAT(PARAMS%NPHIM),SOURCE=0._spf)
     ALLOCATE(SELF%NUM_ELEMENTS(PARAMS%NS,PARAMS%NT),SOURCE=0_spi)
     ALLOCATE(SELF%START_IDX(PARAMS%NS,PARAMS%NT),SOURCE=0_dpi)
 ! ----------------------------------------------------------------------
