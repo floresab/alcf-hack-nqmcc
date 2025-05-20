@@ -39,7 +39,11 @@ PROGRAM NQMCC_ALCF_2025
   ALLOCATE(YLM_PROD(PARAMS%NYLM),SOURCE=CMPLX(1.12345_dpf,0.6789_dpf,KIND=dpf))
 ! ----------------------------------------------------------------------
   STATE = PARAMS%SEED
-  CALL PHI%INIT_PHI(PARAMS,STATE,RANK)
+  IF (PARAMS%RW_PHI.EQ.1) THEN
+    CALL PHI%READ_PHI(PARAMS%PHI_FILE)
+  ELSE
+    CALL PHI%INIT_PHI(PARAMS,STATE,RANK)
+  END IF
   IF (RANK.EQ.ROOT) THEN
     INIT = omp_get_wtime()
     PRINT *, "INIT TIME (s)",INIT-FIRST
@@ -95,7 +99,7 @@ PROGRAM NQMCC_ALCF_2025
       END DO
     END DO
     INIT = omp_get_wtime()
-    PRINT *, "DOT TIME (s)",LAST-INIT
+    PRINT *, "DOT TIME (s)",INIT-LAST
     PRINT *, "DOT: ",DOT
     PRINT *, "TOTAL TIME (s)",LAST-FIRST
   END IF
