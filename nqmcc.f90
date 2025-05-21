@@ -1,6 +1,7 @@
 PROGRAM NQMCC_ALCF_2025
 ! ----------------------------------------------------------------------
-  use, intrinsic :: iso_fortran_env, only: spi=>int32, dpi=>int64, dpf=>real64
+  use, intrinsic :: iso_fortran_env, only: spi=>int32, dpi=>int64, dpf=>real64 &
+  &,COMPILER_OPTIONS,COMPILER_VERSION
 ! ----------------------------------------------------------------------
   USE NQMCC_M
   USE MPI_F08
@@ -110,6 +111,7 @@ PROGRAM NQMCC_ALCF_2025
 ! ----------------------------------------------------------------------
   CALL PHI%SCATTER_PHI(PHI_SC,PARAMS,ISTART,IEND)
 #if 1 == gpu_offload
+  PRINT *, "ENTERING PHI_SC ON DEVICE"
   CALL PHI_SC%PHI_MAP_TO_DEVICE()
 #endif
 ! ----------------------------------------------------------------------
