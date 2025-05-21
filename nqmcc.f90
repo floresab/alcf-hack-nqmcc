@@ -11,6 +11,7 @@ PROGRAM NQMCC_ALCF_2025
   TYPE(MPI_COMM)  :: COMM,NODE_COMM
   TYPE(CONTROL_T) :: PARAMS
   TYPE(PHI_T)     :: PHI
+  TYPE(PHI_SCAT_T):: PHI_SC
   REAL(dpf)       :: STATE,FIRST,INIT,LAST,DOT
   COMPLEX(dpf)    :: CX
   INTEGER(spi)    :: I,J,RANK,SIZE,IERROR,ROOT,MAX_IJ
@@ -103,9 +104,9 @@ PROGRAM NQMCC_ALCF_2025
 ! ----------------------------------------------------------------------
   ALLOCATE(PSIJ_FLAT(PARTITION),SOURCE=CMPLX(0._dpf,0._dpf,KIND=dpf))
 ! ----------------------------------------------------------------------
-  CALL PHI%SCATTER_PHI(PARAMS,ISTART,IEND)
+  CALL PHI%SCATTER_PHI(PHI_SC,PARAMS,ISTART,IEND)
 #if 1 == gpu_offload
-  CALL PHI%PHI_MAP_TO_DEVICE()
+  CALL PHI_SC%PHI_MAP_TO_DEVICE()
 #endif
 ! ----------------------------------------------------------------------
   IF (RANK.EQ.ROOT) THEN
@@ -125,15 +126,14 @@ PROGRAM NQMCC_ALCF_2025
 #if 1 == gpu_offload
     !$omp target teams distribute parallel do &
     !$omp& map(tofrom:psij_flat) &
-    !!$omp& map(to:phi,ylm_prod) &
-    !$omp& map(to:ylm_prod) &
+    !$omp& map(to:phi_sc,ylm_prod) &
     !$omp& private(n,cx) &
     !$omp& shared(psij_flat,phi,ylm_prod)
 #endif
     DO IDX=1,PARTITION
       CX=0._dpf
-      DO N=PHI%FIRST(IDX),PHI%LAST(IDX)
-        CX=CX+YLM_PROD(PHI%YLM_IDX_SC(N))*PHI%PHI_DAT_SC(N)
+      DO N=PHI_SC%FIRST(IDX),PHI_SC%LAST(IDX)
+        CX=CX+YLM_PROD(PHI_SC%YLM_IDX_SC(N))*PHI_SC%PHI_DAT_SC(N)
       END DO
       PSIJ_FLAT(IDX)=CX
     END DO
