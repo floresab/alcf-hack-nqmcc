@@ -75,6 +75,10 @@ case $MACHINE in
   CMK_FC=${CMK_FC:-"mpif90"}
   CMK_FLAG="-warn -Dgpu_offload=1 -cpp -O3 -fiopenmp -fopenmp-targets=spir64_gen -Xopenmp-target-backend=spir64_gen \"-device pvc\" "
   ;;
+  aurora-cpu)
+  CMK_FC=${CMK_FC:-"mpif90"}
+  CMK_FLAG="-warn -Dgpu_offload=0 -cpp -O3 -fiopenmp -fopenmp-targets=spir64_gen -Xopenmp-target-backend=spir64_gen \"-device pvc\" "
+  ;;
   nersc)
   CMK_FC=${CMK_FC:-"ftn"}
   CMK_FLAG="-Wall -Dgpu_offload=1 -fast -O3 -mp=gpu,multicore -cpp -gpu=cc80 -Minfo=mp,accel"
