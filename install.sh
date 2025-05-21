@@ -69,28 +69,15 @@ case $MACHINE in
   gnu-cpu)
   CMK_FC=${CMK_FC:-"mpif90"}
   #CMK_FC=${CMK_FC:-"gfortran-14"}
-  CMK_FLAG="-Wall -cpp -O3 -fopenmp -std=f2018 -ffree-line-length-512 -fbacktrace -fcheck=all -pedantic"
-  ;;
-  gnu-gpu)
-  CMK_FC=${CMK_FC:-"mpif90"}
-  CMK_FLAG="-Wall -cpp -O3 -fopenmp -foffload=nvptx-none -std=f2018 -ffree-line-length-512 -fbacktrace -fcheck=all -pedantic"
-  ;;
-  improv)
-  CMK_FC=${CMK_FC:-"mpif90"}
-  CMK_FLAG="-warn -cpp -O3 -fiopenmp"
+  CMK_FLAG="-Wall -Dgpu_offload=0 -cpp -O3 -fopenmp -std=f2018 -ffree-line-length-512 -fbacktrace -fcheck=all -pedantic"
   ;;
   aurora)
   CMK_FC=${CMK_FC:-"mpif90"}
-  CMK_FLAG="-warn -cpp -O3 -fiopenmp -fopenmp-targets=spir64_gen -Xopenmp-target-backend=spir64_gen \"-device pvc\" "
+  CMK_FLAG="-warn -Dgpu_offload=1 -cpp -O3 -fiopenmp -fopenmp-targets=spir64_gen -Xopenmp-target-backend=spir64_gen \"-device pvc\" "
   ;;
-  nersc-cpu)
+  nersc)
   CMK_FC=${CMK_FC:-"ftn"}
-  CMK_FLAG="-Wall -cpp -O3 -fopenmp -std=f2018 -ffree-line-length-512 -fbacktrace -fcheck=all -pedantic"
-  #CMK_FLAG="-O3 -fopenmp -e Z"
-  ;;
-  nersc-gpu)
-  CMK_FC=${CMK_FC:-"ftn"}
-  CMK_FLAG="-Wall -fast -O3 -mp=gpu,multicore -cpp -gpu=cc80 -Minfo=mp,accel"
+  CMK_FLAG="-Wall -Dgpu_offload=1 -fast -O3 -mp=gpu,multicore -cpp -gpu=cc80 -Minfo=mp,accel"
   ;;
 
   *)

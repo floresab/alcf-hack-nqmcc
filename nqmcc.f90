@@ -8,12 +8,13 @@ PROGRAM NQMCC_ALCF_2025
 ! ----------------------------------------------------------------------
   IMPLICIT NONE
 ! ----------------------------------------------------------------------
-  TYPE(MPI_COMM)  :: COMM
+  TYPE(MPI_COMM)  :: COMM,NODE_COMM
   TYPE(CONTROL_T) :: PARAMS
   TYPE(PHI_T)     :: PHI
   REAL(dpf)       :: STATE,FIRST,INIT,LAST,DOT
   COMPLEX(dpf)    :: CX
   INTEGER(spi)    :: I,J,RANK,SIZE,IERROR,ROOT,MAX_IJ
+  INTEGER(spi)    :: NODE_RANK,NODE_SIZE,NUM_NODES,NODE_ROOT
   INTEGER(spi)    :: MY_SAMPLES,PARTITION,EXTRA,ISTART,IEND,IDX
   INTEGER(dpi)    :: S,N
   COMPLEX(dpf), DIMENSION(:,:), ALLOCATABLE :: PSIJ
@@ -25,6 +26,15 @@ PROGRAM NQMCC_ALCF_2025
   ROOT=0_spi
   CALL MPI_COMM_RANK(COMM, RANK, IERROR)
   CALL MPI_COMM_SIZE(COMM, SIZE, IERROR)
+!-----------------------------------------------------------------------
+  NODE_ROOT=0_spi
+!-----------------------------------------------------------------------
+  CALL MPI_COMM_SPLIT_TYPE(COMM, MPI_COMM_TYPE_SHARED, NODE_ROOT, MPI_INFO_NULL, NODE_COMM, IERROR)
+  CALL MPI_COMM_SIZE(NODE_COMM, NODE_SIZE, IERROR)
+  CALL MPI_COMM_RANK(NODE_COMM, NODE_RANK, IERROR)
+  ! free the sub-communicator
+  ! determine the number of allocated nodes
+  NUM_NODES = SIZE / NODE_SIZE
 !-----------------------------------------------------------------------
   FIRST=0._dpf
   INIT=0._dpf
@@ -65,7 +75,7 @@ PROGRAM NQMCC_ALCF_2025
     END IF
   END IF
 ! ----------------------------------------------------------------------
-  IF (RANK.EQ.0) THEN
+  IF (RANK.EQ.ROOT) THEN
     ALLOCATE(COUNTS(SIZE),SOURCE=0_spi)
     ALLOCATE(DISP(SIZE),SOURCE=0_spi)
     IF (EXTRA.EQ.0) THEN
@@ -94,6 +104,9 @@ PROGRAM NQMCC_ALCF_2025
   ALLOCATE(PSIJ_FLAT(PARTITION),SOURCE=CMPLX(0._dpf,0._dpf,KIND=dpf))
 ! ----------------------------------------------------------------------
   CALL PHI%SCATTER_PHI(PARAMS,ISTART,IEND)
+#if 1 == gpu_offload
+  CALL PHI%PHI_MAP_TO_DEVICE()
+#endif
 ! ----------------------------------------------------------------------
   IF (RANK.EQ.ROOT) THEN
     INIT = omp_get_wtime()
@@ -109,6 +122,14 @@ PROGRAM NQMCC_ALCF_2025
 ! TASK 2: 
 !  OFFLOAD TO GPU
 ! ----------------------------------------------------------------------
+#if 1 == gpu_offload
+    !$omp target teams distribute parallel do &
+    !$omp& map(tofrom:psij_flat) &
+    !!$omp& map(to:phi,ylm_prod) &
+    !$omp& map(to:ylm_prod) &
+    !$omp& private(n,cx) &
+    !$omp& shared(psij_flat,phi,ylm_prod)
+#endif
     DO IDX=1,PARTITION
       CX=0._dpf
       DO N=PHI%FIRST(IDX),PHI%LAST(IDX)
@@ -117,9 +138,8 @@ PROGRAM NQMCC_ALCF_2025
       PSIJ_FLAT(IDX)=CX
     END DO
     CALL MPI_GATHERV(PSIJ_FLAT,PARTITION,MPI_COMPLEX16,PSIJ,COUNTS,DISP,MPI_COMPLEX16,ROOT,COMM,IERROR)
-    !CALL MPI_GATHER(PSIJ_FLAT,PARTITION,MPI_COMPLEX16,PSIJ,PARTITION,MPI_COMPLEX16,ROOT,COMM,IERROR)
 ! ----------------------------------------------------------------------
-    IF (RANK.EQ.0) THEN
+    IF (RANK.EQ.ROOT) THEN
       DOT=0._dpf
       DO J=1,PARAMS%NT
         DO I=1,PARAMS%NS
@@ -137,6 +157,7 @@ PROGRAM NQMCC_ALCF_2025
     PRINT *, "TOTAL TIME (s)",LAST-FIRST
   END IF
 ! ----------------------------------------------------------------------
+  CALL MPI_COMM_FREE(NODE_COMM, IERROR)
   CALL MPI_FINALIZE(IERROR)
 ! ----------------------------------------------------------------------
 END PROGRAM NQMCC_ALCF_2025

@@ -208,7 +208,11 @@ MODULE NQMCC_M
 ! ----------------------------------------------------------------------
   SUBROUTINE  PHI_MAP_TO_DEVICE(SELF)
     CLASS(PHI_T),INTENT(INOUT) :: SELF
-    !!$omp target enter data map(to: SELF,SELF%K_START(:,:),SELF%K_END(:,:))
+    !$omp target enter data map(to: self &
+    !$omp& ,self%ylm_idx_sc(:) &
+    !$omp& ,self%phi_dat_sc(:) &
+    !$omp& ,self%first(:) &
+    !$omp& ,self%last(:))
   END SUBROUTINE PHI_MAP_TO_DEVICE
 ! ----------------------------------------------------------------------
 END MODULE NQMCC_M
