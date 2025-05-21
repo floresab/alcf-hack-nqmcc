@@ -18,6 +18,7 @@ PROGRAM NQMCC_ALCF_2025
   INTEGER(dpi)    :: S,N
   COMPLEX(dpf), DIMENSION(:,:), ALLOCATABLE :: PSIJ
   COMPLEX(dpf), DIMENSION(:),   ALLOCATABLE :: YLM_PROD,PSIJ_FLAT
+  INTEGER(spi), DIMENSION(:),   ALLOCATABLE :: COUNTS,DISP
 ! ----------------------------------------------------------------------
   CALL MPI_INIT(IERROR)
   COMM=MPI_COMM_WORLD
@@ -64,10 +65,33 @@ PROGRAM NQMCC_ALCF_2025
     END IF
   END IF
 ! ----------------------------------------------------------------------
+  IF (RANK.EQ.0) THEN
+    ALLOCATE(COUNTS(SIZE),SOURCE=0_spi)
+    ALLOCATE(DISP(SIZE),SOURCE=0_spi)
+    IF (EXTRA.EQ.0) THEN
+      DO I=1,SIZE
+        COUNTS(I)=PARTITION
+      END DO
+    ELSE
+      DO I=1,SIZE
+        IF (I.LE.EXTRA) THEN
+          COUNTS(I)=PARTITION
+        ELSE
+          COUNTS(I)=PARTITION-1
+        END IF
+      END DO
+    END IF
+    DO I=2,SIZE
+      DISP(I)=SUM(COUNTS(1:I-1))
+    END DO
+  ELSE
+    ALLOCATE(COUNTS(1),SOURCE=0_spi)
+    ALLOCATE(DISP(1),SOURCE=0_spi)
+  END IF
+! ----------------------------------------------------------------------
   MY_SAMPLES=PARAMS%NSAMPLES
 ! ----------------------------------------------------------------------
   ALLOCATE(PSIJ_FLAT(PARTITION),SOURCE=CMPLX(0._dpf,0._dpf,KIND=dpf))
-  !ALLOCATE(PSIJ_FLAT(ISTART:IEND),SOURCE=CMPLX(0._dpf,0._dpf,KIND=dpf))
 ! ----------------------------------------------------------------------
   CALL PHI%SCATTER_PHI(PARAMS,ISTART,IEND)
 ! ----------------------------------------------------------------------
@@ -92,7 +116,8 @@ PROGRAM NQMCC_ALCF_2025
       END DO
       PSIJ_FLAT(IDX)=CX
     END DO
-    CALL MPI_GATHER(PSIJ_FLAT,PARTITION,MPI_COMPLEX16,PSIJ,PARTITION,MPI_COMPLEX16,ROOT,COMM,IERROR)
+    CALL MPI_GATHERV(PSIJ_FLAT,PARTITION,MPI_COMPLEX16,PSIJ,COUNTS,DISP,MPI_COMPLEX16,ROOT,COMM,IERROR)
+    !CALL MPI_GATHER(PSIJ_FLAT,PARTITION,MPI_COMPLEX16,PSIJ,PARTITION,MPI_COMPLEX16,ROOT,COMM,IERROR)
 ! ----------------------------------------------------------------------
     IF (RANK.EQ.0) THEN
       DOT=0._dpf
