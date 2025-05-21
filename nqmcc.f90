@@ -55,7 +55,7 @@ PROGRAM NQMCC_ALCF_2025
   CALL PHI%ALLOCATE_PHI(PARAMS)
 ! ----------------------------------------------------------------------
   ALLOCATE(PSIJ(PARAMS%NS,PARAMS%NT),SOURCE=CMPLX(0._dpf,0._dpf,KIND=dpf))
-  ALLOCATE(YLM_PROD(PARAMS%NYLM),SOURCE=CMPLX(1.12345_dpf,0.6789_dpf,KIND=dpf))
+  ALLOCATE(YLM_PROD(PARAMS%NYLM),SOURCE=CMPLX(0._dpf,0._dpf,KIND=dpf))
 ! ----------------------------------------------------------------------
   STATE = PARAMS%SEED
   IF (PARAMS%RW_PHI.EQ.1) THEN
@@ -121,6 +121,9 @@ PROGRAM NQMCC_ALCF_2025
   END IF
 ! ----------------------------------------------------------------------
   DO S=1,MY_SAMPLES
+    DO I=1,PARAMS%NYLM
+      YLM_PROD(I)=CMPLX(2.3_dpf*I*10._dpf**(-6),1.23_dpf*S*10._dpf**(-5),KIND=dpf)
+    END DO
 ! ----------------------------------------------------------------------
 ! ALL WALKERS DO THIS LOOP MANY TIMES FOR EACH SAMPLE : 6*A + 1 * 3 * (A CHOOSE 2)
 ! TASK 1: 
@@ -158,8 +161,8 @@ PROGRAM NQMCC_ALCF_2025
     LAST = omp_get_wtime()
     PRINT *, "SAMPLE TIME (s)",LAST-INIT
     PRINT *, "TIME PER SAMPLE (s)",(LAST-INIT)/PARAMS%NSAMPLES
-    IF (PARAMS%NT.EQ.70) PRINT *, "DOT ERROR: ",ABS(DOT-4.2908172651317376_dpf)
-    IF (PARAMS%NT.EQ.70) PRINT *, "DOT: ",DOT
+    IF (PARAMS%NT.EQ.70) PRINT *, "DOT ERROR: ",ABS(DOT-3.7704504565921858E-002_dpf)
+    PRINT *, "DOT: ",DOT
     PRINT *, "TOTAL TIME (s)",LAST-FIRST
   END IF
 ! ----------------------------------------------------------------------
