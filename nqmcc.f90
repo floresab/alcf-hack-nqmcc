@@ -109,6 +109,7 @@ PROGRAM NQMCC_ALCF_2025
 ! ----------------------------------------------------------------------
   ALLOCATE(PSIJ_FLAT(PARTITION),SOURCE=CMPLX(0._dpf,0._dpf,KIND=dpf))
 ! ----------------------------------------------------------------------
+  print *, maxval(phi%ylm_idx)
   CALL PHI%SCATTER_PHI(PHI_SC,PARAMS,ISTART,IEND)
 #if 1 == gpu_offload
   PRINT *, "ENTERING PHI_SC ON DEVICE"
@@ -122,7 +123,7 @@ PROGRAM NQMCC_ALCF_2025
 ! ----------------------------------------------------------------------
   DO S=1,MY_SAMPLES
     DO I=1,PARAMS%NYLM
-      YLM_PROD(I)=CMPLX(2.3_dpf*I*10._dpf**(-6),1.23_dpf*S*10._dpf**(-5),KIND=dpf)
+      YLM_PROD(I)=CMPLX(2.3_dpf*I*10._dpf**(-12),1.23_dpf*S*10._dpf**(-12),KIND=dpf)
     END DO
 ! ----------------------------------------------------------------------
 ! ALL WALKERS DO THIS LOOP MANY TIMES FOR EACH SAMPLE : 6*A + 1 * 3 * (A CHOOSE 2)
@@ -162,6 +163,7 @@ PROGRAM NQMCC_ALCF_2025
     PRINT *, "SAMPLE TIME (s)",LAST-INIT
     PRINT *, "TIME PER SAMPLE (s)",(LAST-INIT)/PARAMS%NSAMPLES
     IF (PARAMS%NT.EQ.70) PRINT *, "DOT ERROR: ",ABS(DOT-3.7704504565921858E-002_dpf)
+    IF (PARAMS%NT.EQ.429) PRINT *, "DOT ERROR: ",ABS(DOT-8.367575412999564E-014_dpf)
     PRINT *, "DOT: ",DOT
     PRINT *, "TOTAL TIME (s)",LAST-FIRST
   END IF
