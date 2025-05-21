@@ -73,11 +73,11 @@ case $MACHINE in
   ;;
   aurora)
   CMK_FC=${CMK_FC:-"mpif90"}
-  CMK_FLAG="-warn -Dgpu_offload=1 -cpp -O3 -fiopenmp -fopenmp-targets=spir64_gen -Xopenmp-target-backend=spir64_gen \"-device pvc\" "
+  CMK_FLAG="-diag-enable=all -warn -Dgpu_offload=1 -cpp -O3 -fiopenmp -fopenmp-targets=spir64_gen -Xopenmp-target-backend=spir64_gen \"-device pvc\" "
   ;;
   aurora-cpu)
   CMK_FC=${CMK_FC:-"mpif90"}
-  CMK_FLAG="-warn -Dgpu_offload=0 -fopenmp-target-do-concurrent -cpp -O3 -fiopenmp -fopenmp-targets=spir64_gen -Xopenmp-target-backend=spir64_gen \"-device pvc\" "
+  CMK_FLAG="-diag-enable=all -warn -Dgpu_offload=0 -fopenmp-target-do-concurrent -cpp -O3 -fiopenmp -fopenmp-targets=spir64_gen -Xopenmp-target-backend=spir64_gen \"-device pvc\" "
   ;;
   nersc)
   CMK_FC=${CMK_FC:-"ftn"}
