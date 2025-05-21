@@ -1,7 +1,8 @@
+10000     SAMPLES
+12345. SEED
 256    NS
 70    NT
 2170    NYLM
 1061760  NPHIM
 116     max_nz
-12345. SEED
 0 "dummy.in"

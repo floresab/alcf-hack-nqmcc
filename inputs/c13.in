@@ -1,7 +1,8 @@
+10     SAMPLES
+12345. SEED
 8192    NS
 429    NT
 426    NYLM
 10353674612  NPHIM
 1000     max_nz
-12345. SEED
 1 '/flare/gpu_hack/nqmcc/c13.phi'
