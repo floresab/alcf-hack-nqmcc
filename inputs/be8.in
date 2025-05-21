@@ -5,4 +5,4 @@
 2170    NYLM
 1061760  NPHIM
 116     max_nz
-0 "dummy.in"
+1 "inputs/be8.phi"

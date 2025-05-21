@@ -51,10 +51,16 @@ MODULE NQMCC_M
     REAL(spf),   DIMENSION(:),  ALLOCATABLE :: PHI_DAT
     INTEGER(spi),DIMENSION(:,:),ALLOCATABLE :: NUM_ELEMENTS
     INTEGER(dpi),DIMENSION(:,:),ALLOCATABLE :: START_IDX
+! ----------------------------------------------------------------------
+    INTEGER(spi),DIMENSION(:),  ALLOCATABLE :: YLM_IDX_SC
+    REAL(spf),   DIMENSION(:),  ALLOCATABLE :: PHI_DAT_SC
+    INTEGER(dpi),DIMENSION(:),  ALLOCATABLE :: FIRST,LAST
+! ----------------------------------------------------------------------
     CONTAINS
       PROCEDURE :: ALLOCATE_PHI
       PROCEDURE :: INIT_PHI
       PROCEDURE :: READ_PHI
+      PROCEDURE :: SCATTER_PHI
       PROCEDURE :: PHI_MAP_TO_DEVICE
   END TYPE PHI_T
 ! ----------------------------------------------------------------------
@@ -131,6 +137,51 @@ MODULE NQMCC_M
     IF (RANK.EQ.0) PRINT *, "HOW FULL",REAL(II,kind=dpf)/PARAMS%NPHIM
 ! ----------------------------------------------------------------------
   END SUBROUTINE INIT_PHI
+! ----------------------------------------------------------------------
+  SUBROUTINE  SCATTER_PHI(SELF,PARAMS,IJ_START,IJ_END)
+    CLASS(PHI_T),   INTENT(INOUT) :: SELF
+    TYPE(CONTROL_T),INTENT(IN)    :: PARAMS
+    INTEGER(spi),   INTENT(IN)    :: IJ_START,IJ_END
+! ----------------------------------------------------------------------
+    INTEGER(dpi) :: MY_NZ,FIRST_IDX,LAST_IDX,IPHI
+    INTEGER(spi) :: I,J,IDX,MY_IJ_PART,IJ
+! ----------------------------------------------------------------------
+    MY_NZ=0_dpi
+    DO IDX=IJ_START,IJ_END
+      J=1_spi+(IDX-1_spi)/PARAMS%NS
+      I=MOD((IDX-1_spi),PARAMS%NS)+1_spi
+      MY_NZ=MY_NZ+SELF%NUM_ELEMENTS(I,J)
+    END DO
+! ----------------------------------------------------------------------
+    MY_IJ_PART=IJ_END-IJ_START+1_spi
+    print *, MY_IJ_PART,MY_NZ,REAL(MY_NZ,kind=dpf)/PARAMS%NPHIM*100,"%"
+    ALLOCATE(SELF%FIRST(MY_IJ_PART),SOURCE=0_dpi)
+    ALLOCATE(SELF%LAST(MY_IJ_PART),SOURCE=0_dpi)
+    ALLOCATE(SELF%PHI_DAT_SC(MY_NZ),SOURCE=0._spf)
+    ALLOCATE(SELF%YLM_IDX_SC(MY_NZ),SOURCE=0_spi)
+! ----------------------------------------------------------------------
+    IDX=0_spi
+    IJ=0_spi
+    IPHI=0_dpi
+    DO IDX=IJ_START,IJ_END
+      IJ=IJ+1_spi
+      J=1_spi+(IDX-1_spi)/PARAMS%NS
+      I=MOD((IDX-1_spi),PARAMS%NS)+1_spi
+      SELF%FIRST(IJ)=IPHI+1
+      IPHI=IPHI+SELF%NUM_ELEMENTS(I,J)
+      SELF%LAST(IJ)=IPHI
+      FIRST_IDX=SELF%START_IDX(I,J)
+      LAST_IDX=SELF%START_IDX(I,J)+SELF%NUM_ELEMENTS(I,J)-1
+      SELF%PHI_DAT_SC(SELF%FIRST(IJ):SELF%LAST(IJ))=SELF%PHI_DAT(FIRST_IDX:LAST_IDX)
+      SELF%YLM_IDX_SC(SELF%FIRST(IJ):SELF%LAST(IJ))=SELF%YLM_IDX(FIRST_IDX:LAST_IDX)
+    END DO
+! ----------------------------------------------------------------------
+    IF (ALLOCATED(SELF%YLM_IDX)) DEALLOCATE(SELF%YLM_IDX)
+    IF (ALLOCATED(SELF%PHI_DAT)) DEALLOCATE(SELF%PHI_DAT)
+    IF (ALLOCATED(SELF%NUM_ELEMENTS)) DEALLOCATE(SELF%NUM_ELEMENTS)
+    IF (ALLOCATED(SELF%START_IDX)) DEALLOCATE(SELF%START_IDX)
+! ----------------------------------------------------------------------
+  END SUBROUTINE SCATTER_PHI
 ! ----------------------------------------------------------------------
   SUBROUTINE READ_PHI(SELF,FILE_NAME,IS_COMMANDER)
     CLASS (PHI_T),   INTENT(INOUT) :: SELF

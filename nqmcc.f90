@@ -16,7 +16,6 @@ PROGRAM NQMCC_ALCF_2025
   INTEGER(spi)    :: I,J,RANK,SIZE,IERROR,ROOT,MAX_IJ
   INTEGER(spi)    :: MY_SAMPLES,PARTITION,EXTRA,ISTART,IEND,IDX
   INTEGER(dpi)    :: S,N
-  INTEGER(dpi),DIMENSION(:), ALLOCATABLE :: MY_FIRST,MY_LAST
   COMPLEX(dpf), DIMENSION(:,:), ALLOCATABLE :: PSIJ
   COMPLEX(dpf), DIMENSION(:),   ALLOCATABLE :: YLM_PROD,PSIJ_FLAT
 ! ----------------------------------------------------------------------
@@ -67,16 +66,10 @@ PROGRAM NQMCC_ALCF_2025
 ! ----------------------------------------------------------------------
   MY_SAMPLES=PARAMS%NSAMPLES
 ! ----------------------------------------------------------------------
-  ALLOCATE(MY_FIRST(ISTART:IEND),SOURCE=0_dpi)
-  ALLOCATE(MY_LAST(ISTART:IEND),SOURCE=0_dpi)
-  ALLOCATE(PSIJ_FLAT(ISTART:IEND),SOURCE=CMPLX(0._dpf,0._dpf,KIND=dpf))
+  ALLOCATE(PSIJ_FLAT(PARTITION),SOURCE=CMPLX(0._dpf,0._dpf,KIND=dpf))
+  !ALLOCATE(PSIJ_FLAT(ISTART:IEND),SOURCE=CMPLX(0._dpf,0._dpf,KIND=dpf))
 ! ----------------------------------------------------------------------
-  DO IDX=ISTART,IEND
-    J=1_spi+(IDX-1_spi)/PARAMS%NS
-    I=MOD((IDX-1_spi),PARAMS%NS)+1_spi
-    MY_FIRST(IDX)=PHI%START_IDX(I,J)
-    MY_LAST(IDX)=PHI%START_IDX(I,J)+PHI%NUM_ELEMENTS(I,J)-1
-  END DO
+  CALL PHI%SCATTER_PHI(PARAMS,ISTART,IEND)
 ! ----------------------------------------------------------------------
   IF (RANK.EQ.ROOT) THEN
     INIT = omp_get_wtime()
@@ -92,10 +85,10 @@ PROGRAM NQMCC_ALCF_2025
 ! TASK 2: 
 !  OFFLOAD TO GPU
 ! ----------------------------------------------------------------------
-    DO IDX=ISTART,IEND
+    DO IDX=1,PARTITION
       CX=0._dpf
-      DO N=MY_FIRST(IDX),MY_LAST(IDX)
-        CX=CX+YLM_PROD(PHI%YLM_IDX(N))*PHI%PHI_DAT(N)
+      DO N=PHI%FIRST(IDX),PHI%LAST(IDX)
+        CX=CX+YLM_PROD(PHI%YLM_IDX_SC(N))*PHI%PHI_DAT_SC(N)
       END DO
       PSIJ_FLAT(IDX)=CX
     END DO
@@ -114,7 +107,8 @@ PROGRAM NQMCC_ALCF_2025
     LAST = omp_get_wtime()
     PRINT *, "SAMPLE TIME (s)",LAST-INIT
     PRINT *, "TIME PER SAMPLE (s)",(LAST-INIT)/PARAMS%NSAMPLES
-    IF (PARAMS%NT.EQ.70) PRINT *, "DOT ERROR: ",ABS(DOT-35627044.876464307_dpf)
+    IF (PARAMS%NT.EQ.70) PRINT *, "DOT ERROR: ",ABS(DOT-4.2908172651317376_dpf)
+    IF (PARAMS%NT.EQ.70) PRINT *, "DOT: ",DOT
     PRINT *, "TOTAL TIME (s)",LAST-FIRST
   END IF
 ! ----------------------------------------------------------------------
